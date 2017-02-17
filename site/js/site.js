@@ -80,8 +80,70 @@ window.onload = function(){
     if (dataHashTag !== null){
         hashUpdate(document.getElementById('theData').value);
     }
+	
+	//BrainWallet
+	bw_phrase = document.getElementById('bw_input');
+	bw_hexSeed = document.getElementById('bw_hexSeed');
+    bw_privSpend = document.getElementById('bw_privSpend');
+    bw_pubSpend = document.getElementById('bw_pubSpend');
+    bw_privView = document.getElementById('bw_privView');
+    bw_pubView = document.getElementById('bw_pubView');
+    bw_pubAddr = document.getElementById('bw_pubAddr');
+	bw_mnemonic = document.getElementById('bw_mnemonic');
 }
 
+//BrainWallet, blame Taushet if there is an error here, not Luigi1111
+function bwGen() {
+	
+	//Clear
+	bw_hexSeed.value = "";
+    bw_privSpend.value = "";
+    bw_pubSpend.value = "";
+    bw_privView.value = "";
+    bw_pubView.value = "";
+    bw_pubAddr.value = "";
+	
+	//Generate Hex Seed
+	var hs = keccak_256(bw_phrase.value);
+	
+	//Generate Keys
+    var pID = "";
+    var netbyte = pubAddrNetByte.value;
+    if (netbyte === "11"){
+        if (hs.length == 64){
+            var privSk = sc_reduce32(hs);
+            var privVk = sc_reduce32(cn_fast_hash(sec_key_to_pub(privSk)));
+        } else {
+            var privSk = sc_reduce32(cn_fast_hash(hs));
+            var privVk = sc_reduce32(cn_fast_hash(sec_key_to_pub(privSk)));
+        }
+    } else {
+        if (hs.length == 64){
+            var privSk = sc_reduce32(hs);
+            var privVk = sc_reduce32(cn_fast_hash(privSk));
+        } else {
+            var privSk = sc_reduce32(cn_fast_hash(hs));
+            var privVk = sc_reduce32(cn_fast_hash(cn_fast_hash(hs)));
+        }
+        if (netbyte === "13"){
+            pID = rand_32().slice(0,16);
+        }
+    }
+    var pubVk = sec_key_to_pub(privVk);
+    var pubSk = sec_key_to_pub(privSk);
+    var address = toPublicAddr(netbyte, pubSk, pubVk, pID);
+	
+	//Generate MN
+	bw_mnemonic.value = mn_encode(hs, mnDictTag.value)
+	
+	//Publish
+    bw_hexSeed.value = hs;
+    bw_privSpend.value = privSk;
+    bw_pubSpend.value = pubSk;
+    bw_privView.value = privVk;
+    bw_pubView.value = pubVk;
+    bw_pubAddr.value = address;
+}
 
 //conversion functions, etc
 function coinType(type){
@@ -325,7 +387,7 @@ function encryptMn(encrypt){
     setTimeout(function (encrypt, mn, pass){
         var d = new Date().getTime(); 
         var key = bintohex(SlowHash.string(pass));
-        var t = new Date().getTime() - d;
+        var t = d - new Date().getTime();
         console.log("cn_slow_hash time: " + t);
         var mnResult = mn_encode(hex_xor(mn, key.slice(0, mn.length)));
         if (encrypt){
@@ -336,7 +398,6 @@ function encryptMn(encrypt){
     }, 50, encrypt, mn, pass);
 }
 
-//new address = B+C, A, where C is a derived pubkey from the 2fa key
 function deriveAddr(){
     derivedAddrTag.value = "";
     if (addrPt2Tag.value === ""){
@@ -344,10 +405,8 @@ function deriveAddr(){
     }
     try{
         var keys = decode_address(addrPt2Tag.value);
-        if (cnBase58.decode(addrPt2Tag.value).slice(0, pubAddrNetByte.value.length) !== pubAddrNetByte.value){
-            throw "Make sure you have selected the right network byte for your intended address type!";
-        }
-    } catch (err){
+    }
+    catch(err){
         derivedAddrTag.value = err;
         return;
     }
@@ -356,19 +415,14 @@ function deriveAddr(){
     setTimeout(function (keys, pass){
         var d = new Date().getTime(); 
         var scalar = sc_reduce32(bintohex(SlowHash.string(pass)));
-        var t = new Date().getTime() - d;
+        var t = d - new Date().getTime();
         console.log("cn_slow_hash time: " + t);
         var pub2 = sec_key_to_pub(scalar);
         var derivedPub = ge_add(keys.spend, pub2);
-        try{
-            derivedAddrTag.value = toPublicAddr(pubAddrNetByte.value, derivedPub, keys.view, (keys.intPaymentId === undefined) ? "": keys.intPaymentId);
-        } catch (err){
-            derivedAddrTag.value = err;
-        }
+        derivedAddrTag.value = pubkeys_to_string(derivedPub, keys.view);
     }, 50, keys, pass);
 }
 
-//new private keys = b+c, a, where c is a derived scalar from the 2fa key
 function derive2faKeys(){
     derivedSpendKeyTag.value = "";
     derivedViewKeyTag.value = "";
@@ -377,7 +431,8 @@ function derive2faKeys(){
     }
     try{
         var scalar1 = sc_reduce32(mn_decode(mnemonicPt2Tag.value)); //ensure seed is reduced
-    } catch (err){
+    }
+    catch(err){
         derivedSpendKeyTag.value = err;
         return;
     }
@@ -386,15 +441,11 @@ function derive2faKeys(){
     setTimeout(function (scalar1, pass){
         var d = new Date().getTime(); 
         var scalar2 = sc_reduce32(bintohex(SlowHash.string(pass)));
-        var t = new Date().getTime() - d;
+        var t = d - new Date().getTime();
         console.log("cn_slow_hash time: " + t);
         var spendKey = sc_add(scalar1, scalar2);
         var viewKey = sc_reduce32(cn_fast_hash(scalar1));
-        try{
-            derivedAddrTag.value = toPublicAddr(pubAddrNetByte.value, sec_key_to_pub(spendKey), sec_key_to_pub(viewKey), paymentID.value); //be careful with the selected netbyte here (at top left of page)!
-        } catch (err){
-            derivedAddrTag.value = err;
-        }
+        derivedAddrTag.value = pubkeys_to_string(sec_key_to_pub(spendKey), sec_key_to_pub(viewKey));
         derivedSpendKeyTag.value = spendKey;
         derivedViewKeyTag.value = viewKey;
     }, 50, scalar1, pass);
@@ -479,7 +530,6 @@ function addrSubmit(){
 function toPublicAddr(netbyte, pubsk, pubvk, pid){
     if (pubvk === undefined){pubk = "";}
     if (pid === undefined){pid = "";}
-    if ((netbyte !== "13" && pid !== "") || (netbyte === "13" && pid === "")){throw "pid or no pid with wrong address type";}
     if (netbyte === "11"){pubvk = "";}
     var preAddr = netbyte + pubsk + pubvk + pid;
     var hash = cn_fast_hash(preAddr);
@@ -868,7 +918,7 @@ function cryptonightWorker(){
     setTimeout(function (data){
         var d = new Date().getTime();
         var result = bintohex(SlowHash.hex(data));
-        var t = new Date().getTime() - d;
+        var t = d - new Date().getTime();
         console.log("cn_slow_hash time: " + t);
         document.getElementById('slowHashOut').value = result;
     }, 50, data);
