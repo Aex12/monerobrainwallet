@@ -1,20 +1,9 @@
-# xmr.llcoins.net
-XMR Tools Site Files
+# Monero Brainwallet Generator
 
 **Pages:**
 
-1. addressgen.html -- provides a streamlined account generator, including two different methods of encryption
-2. addresstests.html -- provides an more extensive amount of options for step-by-step private/public key/address generation and verification for several Cryptonote coins
-3. checktx.html -- allows for the decoding of one-time-output keys of a particular transaction, associating them with their public account. This requires secret data (either the view private key, or the transaction private key) and an internet connection to MoneroBlocks to get the transaction data.
-4. sign.html -- generates and verifies signatures on arbitrary data using one of your account private keys (spend key or view key)
-5. slowhash.html -- generates the CryptoNight hash of hexadecimal input data; overall not too useful except for visually checking a block's PoW result
+A _brainwallet_ is a Monero address and keyset derived from a user-defined passphrase. This allows the seed to literally _never_ be written down or typed, and therefore ensures (in theory) that the funds in the associated address are safe forever within the brain of the creator. In reality, humans are shockingly poor sources of entropy and the phrases that they create are notoriously easy to crack (albiet far more difficult in Monero than Bitcoin due to the underlying architecture). Nevertheless, in very specific scenarios and use cases they do have a role to play. If you are unsure at all or are unaware of the risks - **DO NOT USE A BRAINWALLET**.
 
-A .zip file is provided of the generator page for convenient offline use. To verify the .asc, with gpg installed:
+[Here](https://www.youtube.com/watch?v=foil0hzl4Pg) is a good talk on how someone managed to gain access to large numbers of Bitcoins by exploiting poor entropy in brainwallet creation in Bitcoin. Don't be a statistic :)
 
-1. Get my key here: https://raw.githubusercontent.com/monero-project/monero/master/utils/gpg_keys/luigi1111.asc
-2. Save it as **luigi1111.asc** and import it at the command line with `gpg --import luigi1111.asc`
-3. In the directory where "addressgen.zip" and "addressgen.zip.asc" are located, type:
-
-`gpg --verify addressgen.zip.asc addressgen.zip`
-
-You should get `gpg: Good signature from "luigi1111 <luigi1111w@gmail.com>"`; you can ingore the warning about the key not being certified.
+This tool was made by [taushet](https://www.reddit.com/user/taushet) on as a fork of Luigi1111's toolkit. If you want to donate Monero to support the core development team, send it here: [donate.getmonero.org](http://donate.getmonero.org). 
