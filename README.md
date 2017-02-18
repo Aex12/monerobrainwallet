@@ -4,4 +4,6 @@ A _brainwallet_ is a Monero address and keyset derived from a user-defined passp
 
 [Here](https://www.youtube.com/watch?v=foil0hzl4Pg) is a good talk on how someone managed to gain access to large numbers of Bitcoins by exploiting poor entropy in brainwallet creation in Bitcoin. Don't be a statistic :)
 
+This tool can be found online at [monerobrainwallet.com](http://monerobrainwallet.com/).
+
 This tool was made by [taushet](https://www.reddit.com/user/taushet) on as a fork of Luigi1111's toolkit. If you want to donate Monero to support the core development team, send it here: [donate.getmonero.org](http://donate.getmonero.org). 
